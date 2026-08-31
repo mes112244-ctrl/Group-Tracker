@@ -3,3 +3,6 @@
 @media(max-width:900px){.app-shell{grid-template-columns:1fr}.sidebar{display:flex;overflow:auto;gap:6px;border-left:0;border-bottom:1px solid var(--line);padding:10px}.nav{min-width:max-content;margin:0}.cards-4,.cards-3,.cards-2{grid-template-columns:1fr 1fr}.content{padding:14px}.topbar{align-items:flex-start;flex-direction:column}.quick-actions{grid-template-columns:1fr}}
 @media(max-width:560px){.cards-4,.cards-3,.cards-2{grid-template-columns:1fr}.toolbar{width:100%}.toolbar>*{flex:1}.student-title{align-items:flex-start;flex-direction:column}}
 @media print{body{background:#fff}.no-print{display:none!important}.print-only{display:block}.content{padding:0}.app-shell{display:block}.view{display:none!important}.view.print-target{display:block!important}.card,.report-sheet{box-shadow:none;border:0}.table-wrap{overflow:visible;border:0}table{min-width:0;font-size:11px}th,td{padding:6px}@page{size:A4;margin:12mm}}
+
+.section-switcher{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 8px;border:1px solid var(--line);border-radius:12px;background:#fff}.section-switcher .section-label{font-weight:700;white-space:nowrap}.section-switcher select{width:auto;min-width:150px;padding:8px 10px}.section-switcher button{white-space:nowrap}
+@media(max-width:560px){.section-switcher{width:100%}.section-switcher select{flex:1;min-width:120px}}

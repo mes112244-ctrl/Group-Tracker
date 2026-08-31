@@ -1,14 +1,111 @@
 const STORAGE_KEY='coop_group_tracker_v1';
+const SECTIONS_META_KEY='coop_group_tracker_sections_v2';
+const ACTIVE_SECTION_KEY='coop_group_tracker_active_section_v2';
+
 const defaultState={
   settings:{teacher:'زهراء آل سليم',school:'',subject:'',grade:'',section:'',term:'',currentPeriod:1},
   students:[],groups:[],worksheets:[],evaluations:{},quickLogs:{}
 };
+
+function uid(prefix='id'){return prefix+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7)}
+function sectionStorageKey(id){return `${STORAGE_KEY}__${id}`}
+function blankState(sectionName=''){const s=structuredClone(defaultState);s.settings.section=sectionName;return s}
+function parseJSON(text,fallback=null){try{return JSON.parse(text)??fallback}catch{return fallback}}
+
+function initSections(){
+  let meta=parseJSON(localStorage.getItem(SECTIONS_META_KEY));
+  if(meta?.sections?.length){
+    if(!meta.activeId || !meta.sections.some(s=>s.id===meta.activeId))meta.activeId=meta.sections[0].id;
+    localStorage.setItem(SECTIONS_META_KEY,JSON.stringify(meta));
+    localStorage.setItem(ACTIVE_SECTION_KEY,meta.activeId);
+    return meta;
+  }
+
+  const legacy=parseJSON(localStorage.getItem(STORAGE_KEY));
+  const firstName=String(legacy?.settings?.section||'الشعبة الأولى').trim()||'الشعبة الأولى';
+  const sections=[
+    {id:'section_1',name:firstName},
+    {id:'section_2',name:'الشعبة الثانية'},
+    {id:'section_3',name:'الشعبة الثالثة'},
+    {id:'section_4',name:'الشعبة الرابعة'}
+  ];
+  if(legacy)localStorage.setItem(sectionStorageKey('section_1'),JSON.stringify(legacy));
+  else localStorage.setItem(sectionStorageKey('section_1'),JSON.stringify(blankState(firstName)));
+  sections.slice(1).forEach(s=>localStorage.setItem(sectionStorageKey(s.id),JSON.stringify(blankState(s.name))));
+  meta={version:2,activeId:'section_1',sections};
+  localStorage.setItem(SECTIONS_META_KEY,JSON.stringify(meta));
+  localStorage.setItem(ACTIVE_SECTION_KEY,meta.activeId);
+  return meta;
+}
+
+let sectionsMeta=initSections();
+let activeSectionId=localStorage.getItem(ACTIVE_SECTION_KEY)||sectionsMeta.activeId;
+if(!sectionsMeta.sections.some(s=>s.id===activeSectionId))activeSectionId=sectionsMeta.sections[0].id;
+
+function currentSection(){return sectionsMeta.sections.find(s=>s.id===activeSectionId)}
+function loadState(){
+  const name=currentSection()?.name||'';
+  const saved=parseJSON(localStorage.getItem(sectionStorageKey(activeSectionId)));
+  return saved?{...structuredClone(defaultState),...saved,settings:{...defaultState.settings,...saved.settings,section:name}}:blankState(name)
+}
 let state=loadState();
 let currentView='dashboard';
 
-function uid(prefix='id'){return prefix+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7)}
-function loadState(){try{return {...structuredClone(defaultState),...(JSON.parse(localStorage.getItem(STORAGE_KEY))||{})}}catch{return structuredClone(defaultState)}}
-function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));renderAll()}
+function persistMeta(){
+  sectionsMeta.activeId=activeSectionId;
+  localStorage.setItem(SECTIONS_META_KEY,JSON.stringify(sectionsMeta));
+  localStorage.setItem(ACTIVE_SECTION_KEY,activeSectionId);
+}
+function saveState(){
+  state.settings.section=currentSection()?.name||state.settings.section||'';
+  localStorage.setItem(sectionStorageKey(activeSectionId),JSON.stringify(state));
+  renderAll();
+}
+function switchSection(id){
+  if(!sectionsMeta.sections.some(s=>s.id===id))return;
+  activeSectionId=id;
+  persistMeta();
+  state=loadState();
+  closeModal();
+  renderAll();
+}
+function addSection(){
+  const name=prompt('اكتبي اسم الشعبة الجديدة');
+  if(!name?.trim())return;
+  const id='section_'+Date.now().toString(36);
+  sectionsMeta.sections.push({id,name:name.trim()});
+  localStorage.setItem(sectionStorageKey(id),JSON.stringify(blankState(name.trim())));
+  activeSectionId=id;
+  persistMeta();
+  state=loadState();
+  renderAll();
+}
+function deleteCurrentSection(){
+  if(sectionsMeta.sections.length<=1)return alert('يجب أن تبقى شعبة واحدة على الأقل.');
+  const sec=currentSection();
+  if(!confirm(`حذف ${sec?.name||'هذه الشعبة'} وجميع بياناتها من هذا الجهاز؟`))return;
+  localStorage.removeItem(sectionStorageKey(activeSectionId));
+  sectionsMeta.sections=sectionsMeta.sections.filter(s=>s.id!==activeSectionId);
+  activeSectionId=sectionsMeta.sections[0].id;
+  persistMeta();
+  state=loadState();
+  renderAll();
+}
+function renderSectionSwitcher(){
+  const toolbar=document.querySelector('.toolbar');
+  if(!toolbar)return;
+  let box=document.getElementById('sectionSwitcher');
+  if(!box){
+    box=document.createElement('div');
+    box.id='sectionSwitcher';
+    box.className='section-switcher';
+    toolbar.prepend(box);
+  }
+  box.innerHTML=`<span class="section-label">الشعبة:</span>
+    <select id="sectionSelect">${sectionsMeta.sections.map(s=>`<option value="${s.id}" ${s.id===activeSectionId?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
+    <button class="secondary small" type="button" onclick="addSection()">+ إضافة شعبة</button>`;
+  document.getElementById('sectionSelect').onchange=e=>switchSection(e.target.value);
+}
 function esc(s=''){return String(s).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}
 function fmt(n,d=1){return Number.isFinite(n)?Number(n).toFixed(d):'—'}
 function studentById(id){return state.students.find(s=>s.id===id)}
@@ -32,7 +129,7 @@ document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='
 function openModal(title,html){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=html;document.getElementById('modal').classList.remove('hidden')}
 function closeModal(){document.getElementById('modal').classList.add('hidden')}
 
-function renderAll(){document.getElementById('schoolLine').textContent=[state.settings.school,state.settings.subject,state.settings.grade,state.settings.section,`الفترة ${state.settings.currentPeriod}`].filter(Boolean).join(' • ')||'المرحلة الثانوية • متابعة 4 فترات';renderView(currentView)}
+function renderAll(){renderSectionSwitcher();document.getElementById('schoolLine').textContent=[state.settings.school,state.settings.subject,state.settings.grade,state.settings.section,`الفترة ${state.settings.currentPeriod}`].filter(Boolean).join(' • ')||'المرحلة الثانوية • متابعة 4 فترات';renderView(currentView)}
 function renderView(v){({dashboard:renderDashboard,students:renderStudents,groups:renderGroups,worksheets:renderWorksheets,quick:renderQuick,reports:renderReports,settings:renderSettings}[v]||(()=>{}))()}
 
 function renderDashboard(){
@@ -90,14 +187,31 @@ function studentRecommendation(id){const v=avg([1,2,3,4].map(p=>totalStudentPeri
 function showGroupReport(id){const g=groupById(id);if(!g)return;const ss=studentsInGroup(id);const rows=ss.map(s=>`<tr><td>${esc(s.name)}</td>${[1,2,3,4].map(p=>`<td>${fmt(totalStudentPeriod(s.id,p),2)}</td>`).join('')}<td>${fmt(avg([1,2,3,4].map(p=>totalStudentPeriod(s.id,p))),2)}</td></tr>`).join('');const html=`<div id="reportPrint" class="report-sheet"><h2>تقرير المجموعة</h2><h3>${esc(g.name)}</h3><div class="table-wrap"><table><thead><tr><th>الطالبة</th><th>ف1</th><th>ف2</th><th>ف3</th><th>ف4</th><th>المتوسط</th></tr></thead><tbody>${rows||'<tr><td colspan="6">لا توجد طالبات</td></tr>'}</tbody></table></div><p><strong>متوسط المجموعة العام:</strong> ${ss.length?fmt(avg(ss.map(s=>avg([1,2,3,4].map(p=>totalStudentPeriod(s.id,p))))),2):'—'} / 5</p></div><div class="row" style="margin-top:12px"><button onclick="printReportModal()">طباعة التقرير</button></div>`;openModal('تقرير المجموعة',html)}
 function printReportModal(){const report=document.getElementById('reportPrint');if(!report)return;const w=window.open('','_blank');w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><title>تقرير</title><link rel="stylesheet" href="style.css"></head><body>${report.outerHTML}<script>window.onload=()=>window.print()<\/script></body></html>`);w.document.close()}
 
-function renderSettings(){const s=state.settings;const el=document.getElementById('view-settings');el.innerHTML=`<div class="section-head"><div><h2>الإعدادات</h2><div class="muted">بيانات التقارير والفترة الحالية</div></div></div><div class="card"><div class="grid cards-2"><div class="field"><label>اسم المعلمة</label><input id="setTeacher" value="${esc(s.teacher||'')}"></div><div class="field"><label>اسم المدرسة</label><input id="setSchool" value="${esc(s.school||'')}"></div><div class="field"><label>المادة</label><input id="setSubject" value="${esc(s.subject||'')}"></div><div class="field"><label>الصف</label><input id="setGrade" value="${esc(s.grade||'')}"></div><div class="field"><label>الشعبة</label><input id="setSection" value="${esc(s.section||'')}"></div><div class="field"><label>الفصل الدراسي</label><input id="setTerm" value="${esc(s.term||'')}"></div><div class="field"><label>الفترة الحالية</label><select id="setPeriod">${[1,2,3,4].map(p=>`<option ${+s.currentPeriod===p?'selected':''}>${p}</option>`).join('')}</select></div></div><div class="row" style="margin-top:14px"><button onclick="saveSettings()">حفظ الإعدادات</button><button class="danger" onclick="resetAll()">مسح جميع البيانات</button></div></div>`}
-function saveSettings(){Object.assign(state.settings,{teacher:document.getElementById('setTeacher').value.trim(),school:document.getElementById('setSchool').value.trim(),subject:document.getElementById('setSubject').value.trim(),grade:document.getElementById('setGrade').value.trim(),section:document.getElementById('setSection').value.trim(),term:document.getElementById('setTerm').value.trim(),currentPeriod:+document.getElementById('setPeriod').value});saveState();alert('تم حفظ الإعدادات')}
-function resetAll(){if(confirm('سيتم حذف جميع الطالبات والمجموعات والدرجات نهائيًا من هذا الجهاز. متابعة؟')){state=structuredClone(defaultState);saveState()}}
+function renderSettings(){const s=state.settings;const el=document.getElementById('view-settings');el.innerHTML=`<div class="section-head"><div><h2>الإعدادات</h2><div class="muted">بيانات التقارير والفترة الحالية</div></div></div><div class="card"><div class="grid cards-2"><div class="field"><label>اسم المعلمة</label><input id="setTeacher" value="${esc(s.teacher||'')}"></div><div class="field"><label>اسم المدرسة</label><input id="setSchool" value="${esc(s.school||'')}"></div><div class="field"><label>المادة</label><input id="setSubject" value="${esc(s.subject||'')}"></div><div class="field"><label>الصف</label><input id="setGrade" value="${esc(s.grade||'')}"></div><div class="field"><label>الشعبة الحالية</label><input id="setSection" value="${esc(s.section||'')}"></div><div class="field"><label>الفصل الدراسي</label><input id="setTerm" value="${esc(s.term||'')}"></div><div class="field"><label>الفترة الحالية</label><select id="setPeriod">${[1,2,3,4].map(p=>`<option ${+s.currentPeriod===p?'selected':''}>${p}</option>`).join('')}</select></div></div><div class="row" style="margin-top:14px"><button onclick="saveSettings()">حفظ الإعدادات</button><button class="danger" onclick="resetAll()">مسح بيانات الشعبة الحالية</button><button class="danger secondary" onclick="deleteCurrentSection()">حذف الشعبة الحالية</button></div></div>`}
+function saveSettings(){const newSectionName=document.getElementById('setSection').value.trim()||currentSection()?.name||'الشعبة';const sec=currentSection();if(sec)sec.name=newSectionName;Object.assign(state.settings,{teacher:document.getElementById('setTeacher').value.trim(),school:document.getElementById('setSchool').value.trim(),subject:document.getElementById('setSubject').value.trim(),grade:document.getElementById('setGrade').value.trim(),section:newSectionName,term:document.getElementById('setTerm').value.trim(),currentPeriod:+document.getElementById('setPeriod').value});persistMeta();saveState();alert('تم حفظ الإعدادات')}
+function resetAll(){if(confirm('سيتم حذف جميع الطالبات والمجموعات والدرجات من الشعبة الحالية فقط. متابعة؟')){state=blankState(currentSection()?.name||'');saveState()}}
 
-function exportBackup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`نسخة-احتياطية-المجموعات-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)}
+function exportBackup(){
+  const sections={};
+  sectionsMeta.sections.forEach(s=>sections[s.id]=parseJSON(localStorage.getItem(sectionStorageKey(s.id)),blankState(s.name)));
+  const payload={type:'coop_group_tracker_multi_section',version:2,meta:sectionsMeta,activeId:activeSectionId,sections};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`نسخة-احتياطية-كل-الشعب-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href)
+}
 document.getElementById('backupBtn').onclick=exportBackup;
-document.getElementById('restoreInput').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!data.students||!data.groups||!data.settings)throw new Error();if(confirm('استيراد النسخة سيستبدل البيانات الحالية. متابعة؟')){state=data;saveState();alert('تم استيراد النسخة الاحتياطية بنجاح')}}catch{alert('ملف النسخة الاحتياطية غير صالح')}e.target.value=''})
+document.getElementById('restoreInput').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;try{const data=JSON.parse(await f.text());
+  if(data.type==='coop_group_tracker_multi_section'&&data.meta?.sections?.length&&data.sections){
+    if(confirm('استيراد النسخة سيستبدل بيانات جميع الشعب الحالية. متابعة؟')){
+      sectionsMeta=data.meta;
+      sectionsMeta.sections.forEach(s=>localStorage.setItem(sectionStorageKey(s.id),JSON.stringify(data.sections[s.id]||blankState(s.name))));
+      activeSectionId=(data.activeId&&sectionsMeta.sections.some(s=>s.id===data.activeId))?data.activeId:sectionsMeta.sections[0].id;
+      persistMeta();state=loadState();renderAll();alert('تم استيراد النسخة الاحتياطية لجميع الشعب بنجاح')
+    }
+  }else if(data.students&&data.groups&&data.settings){
+    if(confirm('هذه نسخة قديمة لشعبة واحدة. سيتم استيرادها إلى الشعبة الحالية. متابعة؟')){state=data;saveState();alert('تم استيراد النسخة إلى الشعبة الحالية بنجاح')}
+  }else throw new Error();
+}catch{alert('ملف النسخة الاحتياطية غير صالح')}e.target.value=''})
 document.getElementById('printBtn').onclick=()=>window.print();
 
-window.setView=setView;window.showBulkStudents=showBulkStudents;window.addBulkStudents=addBulkStudents;window.showStudentForm=showStudentForm;window.saveStudent=saveStudent;window.deleteStudent=deleteStudent;window.showStudentReport=showStudentReport;window.showGroupForm=showGroupForm;window.saveGroup=saveGroup;window.deleteGroup=deleteGroup;window.showGroupReport=showGroupReport;window.showWorksheetForm=showWorksheetForm;window.saveWorksheet=saveWorksheet;window.deleteWorksheet=deleteWorksheet;window.incQuick=incQuick;window.changePeriod=changePeriod;window.showEvaluation=showEvaluation;window.saveEvaluation=saveEvaluation;window.printReportModal=printReportModal;window.saveSettings=saveSettings;window.resetAll=resetAll;
+window.setView=setView;window.switchSection=switchSection;window.addSection=addSection;window.deleteCurrentSection=deleteCurrentSection;window.showBulkStudents=showBulkStudents;window.addBulkStudents=addBulkStudents;window.showStudentForm=showStudentForm;window.saveStudent=saveStudent;window.deleteStudent=deleteStudent;window.showStudentReport=showStudentReport;window.showGroupForm=showGroupForm;window.saveGroup=saveGroup;window.deleteGroup=deleteGroup;window.showGroupReport=showGroupReport;window.showWorksheetForm=showWorksheetForm;window.saveWorksheet=saveWorksheet;window.deleteWorksheet=deleteWorksheet;window.incQuick=incQuick;window.changePeriod=changePeriod;window.showEvaluation=showEvaluation;window.saveEvaluation=saveEvaluation;window.printReportModal=printReportModal;window.saveSettings=saveSettings;window.resetAll=resetAll;
 renderAll();
