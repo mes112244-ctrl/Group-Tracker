@@ -1,0 +1,132 @@
+* { box-sizing: border-box; }
+:root { font-family: Tahoma, Arial, sans-serif; color: #222; background: #f5f7fa; }
+body { margin: 0; padding: 18px; background: #f5f7fa; direction: rtl; }
+button, input, textarea { font: inherit; }
+button { cursor: pointer; border: 0; border-radius: 10px; padding: 11px 16px; background: #222; color: #fff; }
+button.primary { background: #6750a4; }
+button.success { background: #198754; }
+button.secondary { background: #6c757d; }
+button.backup { background: #0b7285; }
+button.restore { background: #7b2cbf; }
+button.paste-names { background: #6b4fa1; }
+button.analysis-button { background: #b45f06; }
+button.class-add { background: #0f766e; }
+button.danger-outline { color: #a11f1f; background: #fff; border: 1px solid #efb6b6; }
+button:active { transform: scale(.98); }
+.container { max-width: 1600px; margin: auto; background: #fff; padding: 24px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,.08); }
+.page-header { text-align: center; margin-bottom: 18px; }
+.page-header h1 { margin: 0 0 8px; font-size: clamp(24px, 4vw, 32px); }
+.page-header p { margin: 0; color: #666; }
+
+.class-manager { margin: 0 0 18px; padding: 16px; border: 1px solid #dce7e5; border-radius: 16px; background: #f7fbfa; }
+.class-manager-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.class-manager h2 { margin: 0 0 4px; font-size: 19px; }
+.class-manager p { margin: 0; color: #667; font-size: 13px; }
+.class-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0 5px; -webkit-overflow-scrolling: touch; }
+.class-tab { flex: 0 0 auto; border: 1px solid #b8d2ce; background: #fff; color: #285e57; min-width: 110px; }
+.class-tab.active { background: #0f766e; color: #fff; border-color: #0f766e; box-shadow: 0 3px 10px rgba(15,118,110,.2); }
+.class-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+.school-info { display: grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.school-info label span { display: block; margin: 0 4px 6px; font-size: 13px; color: #666; }
+.school-info input { width: 100%; padding: 12px; border: 1px solid #cfd4dc; border-radius: 10px; background: #fff; text-align: right; font-size: 16px; }
+.school-info input:focus, .name-input:focus, .grade-input:focus, textarea:focus { outline: 2px solid #6750a4; outline-offset: 1px; }
+.buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.save-status { min-height: 20px; margin: 5px 0 12px; color: #198754; font-size: 14px; }
+
+.analysis-panel { margin: 10px 0 22px; padding: 18px; border: 1px solid #eadfcf; border-radius: 18px; background: #fffaf3; }
+.analysis-panel.collapsed .stats-grid,
+.analysis-panel.collapsed .chart-card,
+.analysis-panel.collapsed .distribution-card,
+.analysis-panel.collapsed #printAnalysis { display: none; }
+.analysis-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.analysis-heading h2 { margin: 0 0 5px; font-size: 20px; }
+.analysis-heading p { margin: 0; color: #6a6258; font-size: 13px; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
+.stats-grid article { background: #fff; border: 1px solid #eadfce; border-radius: 14px; padding: 15px; text-align: center; }
+.stats-grid span { display: block; color: #776b5c; font-size: 13px; margin-bottom: 7px; }
+.stats-grid strong { font-size: 23px; }
+.chart-card, .distribution-card { background: #fff; border: 1px solid #eadfce; border-radius: 14px; padding: 15px; margin-top: 12px; }
+.chart-card h3, .distribution-card h3 { margin: 0 0 4px; }
+.chart-note { margin: 0 0 10px; color: #777; font-size: 12px; }
+.chart-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+#studentChart { display: block; width: 100%; min-width: 680px; height: auto; }
+.chart-empty { color: #777; text-align: center; padding: 22px 10px; margin: 0; }
+.level-distribution { display: grid; grid-template-columns: repeat(5, minmax(110px, 1fr)); gap: 8px; }
+.distribution-item { border-radius: 12px; padding: 12px; text-align: center; }
+.distribution-item span { display: block; font-size: 12px; margin-bottom: 5px; }
+.distribution-item strong { font-size: 20px; }
+
+.class-page-title { display: flex; align-items: baseline; gap: 9px; margin: 10px 2px 9px; }
+.class-page-title span { color: #777; font-size: 13px; }
+.class-page-title h2 { margin: 0; font-size: 20px; color: #0f766e; }
+.table-wrapper { width: 100%; overflow-x: auto; border-radius: 12px; -webkit-overflow-scrolling: touch; }
+table { width: 100%; min-width: 1460px; border-collapse: collapse; }
+th, td { border: 1px solid #e0e0e0; padding: 7px; text-align: center; }
+th { background: #222; color: #fff; padding: 11px 7px; font-size: 14px; }
+th small { opacity: .8; font-weight: normal; }
+tbody tr:nth-child(even) { background: #fafafa; }
+.name-input { width: 210px; padding: 10px; border: 1px solid #bbb; border-radius: 8px; font-size: 16px; text-align: right; background: #fff; }
+.grade-input { width: 65px; padding: 10px 4px; border: 1px solid #bbb; border-radius: 8px; font-size: 16px; text-align: center; background: #fff; }
+.total-cell, .percent-cell, .average-cell { font-weight: 700; }
+.level-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font-weight: 700; white-space: nowrap; }
+.level-excellent { background: #e3f7e9; color: #146c2e; }
+.level-verygood { background: #e8f2ff; color: #185a9d; }
+.level-good { background: #fff5d8; color: #8a6500; }
+.level-acceptable { background: #fff0dc; color: #9a4b00; }
+.level-follow { background: #ffe6e6; color: #a11f1f; }
+.report-button { background: #6750a4; }
+.delete-button { background: #c93434; }
+.paste-panel { background: #f8f7ff; border: 1px solid #ded8f2; border-radius: 16px; padding: 16px; margin: 12px 0 18px; }
+.paste-panel[hidden] { display: none; }
+.paste-panel h3 { margin: 0 0 6px; }
+.paste-panel p { margin: 0 0 10px; color: #666; font-size: 14px; }
+.paste-panel textarea { width: 100%; min-height: 150px; resize: vertical; border: 1px solid #bbb; border-radius: 10px; padding: 12px; direction: rtl; text-align: right; background: #fff; }
+.paste-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.modal { position: fixed; inset: 0; display: none; z-index: 9999; }
+.modal.open { display: block; }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.48); }
+.report-card { position: relative; z-index: 1; width: min(760px, calc(100% - 24px)); max-height: calc(100vh - 30px); overflow-y: auto; margin: 15px auto; padding: 22px; background: #fff; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.close-report { position: sticky; top: 0; float: left; z-index: 2; width: 40px; height: 40px; padding: 0; border-radius: 50%; background: #333; }
+.report-heading { text-align: center; padding: 4px 48px 14px; border-bottom: 1px solid #eee; }
+.report-heading h2 { margin: 0 0 8px; }
+.report-heading p { margin: 0; color: #666; font-size: 14px; }
+.report-student { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin: 18px 0; padding: 14px; background: #f7f6fb; border-radius: 12px; }
+.report-student span { color: #666; }
+.report-student strong { font-size: 20px; }
+.report-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.report-grid > div, .report-result > div { padding: 14px; border: 1px solid #e3e3e3; border-radius: 12px; text-align: center; }
+.report-grid span, .report-result span { display: block; margin-bottom: 7px; color: #666; }
+.report-grid strong, .report-result strong { font-size: 18px; }
+.report-result { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.note-box { display: block; margin-top: 16px; }
+.note-box > span { display: block; font-weight: 700; margin-bottom: 7px; }
+.note-box textarea { width: 100%; resize: vertical; min-height: 100px; padding: 12px; border: 1px solid #ccc; border-radius: 10px; line-height: 1.8; text-align: right; }
+.report-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.report-actions button { flex: 1 1 170px; }
+
+@media (max-width: 850px) {
+  body { padding: 8px; }
+  .container { padding: 14px; }
+  .school-info { grid-template-columns: 1fr 1fr; }
+  .report-grid { grid-template-columns: 1fr 1fr; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .level-distribution { grid-template-columns: repeat(2, 1fr); }
+  .class-manager-heading, .analysis-heading { align-items: stretch; flex-direction: column; }
+}
+@media (max-width: 520px) {
+  .school-info { grid-template-columns: 1fr; }
+  .report-grid, .report-result, .stats-grid { grid-template-columns: 1fr; }
+  .level-distribution { grid-template-columns: 1fr; }
+}
+@media print {
+  body { background: #fff; padding: 0; }
+  .container { box-shadow: none; max-width: none; }
+  .buttons, .delete-button, .report-button, .save-status, .paste-panel, .class-actions, #addClass, #printAnalysis { display: none !important; }
+  .modal { display: none !important; }
+  .analysis-panel.collapsed .stats-grid,
+  .analysis-panel.collapsed .chart-card,
+  .analysis-panel.collapsed .distribution-card { display: grid; }
+  .class-tabs { overflow: visible; }
+  .class-tab:not(.active) { display: none; }
+}
