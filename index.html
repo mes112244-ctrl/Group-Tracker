@@ -1,57 +1,158 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#f7f8fb" />
-  <title>متابعة المجموعات التعاونية</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>دفتر متابعة الطالبات</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar no-print">
-    <div>
-      <h1>متابعة المجموعات التعاونية</h1>
-      <p id="schoolLine">المرحلة الثانوية • متابعة 4 فترات</p>
-    </div>
-    <div class="toolbar">
-      <button id="backupBtn">تصدير نسخة احتياطية</button>
-      <label class="button secondary">استيراد نسخة احتياطية<input id="restoreInput" type="file" accept="application/json" hidden></label>
-      <button id="printBtn" class="secondary">طباعة</button>
-    </div>
-  </header>
+  <main class="container">
+    <header class="page-header">
+      <h1>📘 دفتر متابعة الطالبات</h1>
+      <p>كل شعبة لها صفحتها وبياناتها وتحليلها البياني المستقل.</p>
+    </header>
 
-  <main class="app-shell">
-    <aside class="sidebar no-print">
-      <button class="nav active" data-view="dashboard">🏠 الرئيسية</button>
-      <button class="nav" data-view="students">👩‍🎓 الطالبات</button>
-      <button class="nav" data-view="groups">👥 المجموعات</button>
-      <button class="nav" data-view="worksheets">📝 أوراق العمل</button>
-      <button class="nav" data-view="quick">⚡ المتابعة السريعة</button>
-      <button class="nav" data-view="reports">📊 التقارير والتحليل</button>
-      <button class="nav" data-view="settings">⚙️ الإعدادات</button>
-    </aside>
-
-    <section class="content">
-      <div id="view-dashboard" class="view active"></div>
-      <div id="view-students" class="view"></div>
-      <div id="view-groups" class="view"></div>
-      <div id="view-worksheets" class="view"></div>
-      <div id="view-quick" class="view"></div>
-      <div id="view-reports" class="view"></div>
-      <div id="view-settings" class="view"></div>
+    <section class="class-manager" aria-label="الشعب">
+      <div class="class-manager-heading">
+        <div>
+          <h2>الشعب</h2>
+          <p>اختاري شعبة للانتقال إلى صفحتها.</p>
+        </div>
+        <button id="addClass" class="class-add" type="button">➕ إضافة شعبة</button>
+      </div>
+      <div id="classTabs" class="class-tabs" role="tablist" aria-label="صفحات الشعب"></div>
+      <div class="class-actions">
+        <button id="renameClass" class="secondary" type="button">✏️ تغيير اسم الشعبة</button>
+        <button id="deleteClass" class="danger-outline" type="button">🗑️ حذف الشعبة</button>
+      </div>
     </section>
+
+    <section class="school-info" aria-label="بيانات الدفتر">
+      <label><span>اسم المدرسة</span><input type="text" id="school" placeholder="اسم المدرسة" autocomplete="off"></label>
+      <label><span>اسم المعلمة</span><input type="text" id="teacher" placeholder="اسم المعلمة" autocomplete="off"></label>
+      <label><span>اسم الشعبة</span><input type="text" id="className" placeholder="مثال: 2/1" autocomplete="off"></label>
+      <label><span>الأسبوع</span><input type="text" id="week" placeholder="الأسبوع" autocomplete="off"></label>
+    </section>
+
+    <section class="buttons" aria-label="أدوات الدفتر">
+      <button id="addStudent" class="primary" type="button">➕ إضافة طالبة</button>
+      <button id="pasteNames" class="paste-names" type="button">📋 لصق أسماء الطالبات</button>
+      <button id="saveData" class="success" type="button">💾 حفظ البيانات</button>
+      <button id="toggleAnalysis" class="analysis-button" type="button">📊 التحليل البياني</button>
+      <button id="printPage" type="button">🖨️ طباعة</button>
+      <button id="printBlankRoster" class="secondary" type="button">📄 طباعة كشف فارغ بالأسماء</button>
+      <button id="backupData" class="backup" type="button">📥 نسخة احتياطية</button>
+      <button id="restoreData" class="restore" type="button">📤 استعادة البيانات</button>
+      <input id="restoreFile" type="file" accept="application/json,.json" hidden>
+    </section>
+
+    <section id="pastePanel" class="paste-panel" hidden>
+      <h3>لصق أسماء الطالبات في الشعبة الحالية</h3>
+      <p>انسخي عمود الأسماء من Word أو Excel والصقيه هنا. كل اسم في سطر مستقل.</p>
+      <textarea id="namesText" placeholder="مثال:&#10;سارة محمد&#10;فاطمة علي&#10;نورة أحمد"></textarea>
+      <div class="paste-actions">
+        <button id="importNames" class="success" type="button">إضافة الأسماء</button>
+        <button id="cancelPaste" class="secondary" type="button">إلغاء</button>
+      </div>
+    </section>
+
+    <p id="saveStatus" class="save-status" aria-live="polite"></p>
+
+    <section id="analysisPanel" class="analysis-panel" aria-label="التحليل البياني للشعبة">
+      <div class="analysis-heading">
+        <div>
+          <h2>📊 التحليل البياني للشعبة</h2>
+          <p id="analysisSubtitle"></p>
+        </div>
+        <button id="printAnalysis" class="secondary" type="button">🖨️ طباعة التحليل</button>
+      </div>
+      <div class="stats-grid">
+        <article><span>عدد الطالبات</span><strong id="statCount">0</strong></article>
+        <article><span>متوسط الشعبة</span><strong id="statAverage">0%</strong></article>
+        <article><span>أعلى نسبة</span><strong id="statHighest">0%</strong></article>
+        <article><span>تحتاج متابعة</span><strong id="statFollow">0</strong></article>
+      </div>
+      <div class="chart-card">
+        <h3>نسبة كل طالبة</h3>
+        <p class="chart-note">يعرض الرسم النسبة الإجمالية لكل طالبة من 100%.</p>
+        <div class="chart-scroll"><canvas id="studentChart" aria-label="رسم بياني لنسب الطالبات"></canvas></div>
+        <p id="chartEmpty" class="chart-empty" hidden>أضيفي أسماء الطالبات ودرجاتهن ليظهر الرسم البياني.</p>
+      </div>
+      <div class="distribution-card">
+        <h3>توزيع مستويات الأداء</h3>
+        <div id="levelDistribution" class="level-distribution"></div>
+      </div>
+    </section>
+
+    <section class="class-page-title" aria-live="polite">
+      <span>صفحة الشعبة</span>
+      <h2 id="activeClassTitle">الشعبة</h2>
+    </section>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>م</th>
+            <th>اسم الطالبة</th>
+            <th>العملي<br><small>5</small></th>
+            <th>الواجب<br><small>10</small></th>
+            <th>المشاركة<br><small>4 مشاركات — المتوسط / 5</small></th>
+            <th>النشاط<br><small>10</small></th>
+            <th>الاختبار 1</th>
+            <th>الاختبار 2</th>
+            <th>الاختبار 3</th>
+            <th>معدل الاختبارات الفترية</th>
+            <th>المجموع<br><small>90</small></th>
+            <th>النسبة</th>
+            <th>إشعار المستوى</th>
+            <th>التقرير</th>
+            <th>حذف</th>
+          </tr>
+        </thead>
+        <tbody id="studentTable"></tbody>
+      </table>
+    </div>
   </main>
 
-  <div id="modal" class="modal hidden no-print" aria-hidden="true">
-    <div class="modal-card">
-      <div class="modal-head">
-        <h2 id="modalTitle"></h2>
-        <button id="modalClose" class="icon-btn">✕</button>
+  <div id="reportModal" class="modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-report></div>
+    <section class="report-card" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+      <button id="closeReport" class="close-report" type="button" aria-label="إغلاق">✕</button>
+      <div id="reportContent" class="report-content">
+        <div class="report-heading">
+          <h2 id="reportTitle">تقرير متابعة الطالبة</h2>
+          <p id="reportMeta"></p>
+        </div>
+        <div class="report-student"><span>اسم الطالبة</span><strong id="reportName"></strong></div>
+        <div class="report-grid">
+          <div><span>العملي</span><strong id="reportPractical"></strong></div>
+          <div><span>الواجب</span><strong id="reportHomework"></strong></div>
+          <div><span>المشاركة</span><strong id="reportParticipation"></strong></div>
+          <div><span>النشاط</span><strong id="reportActivity"></strong></div>
+          <div><span>الاختبار 1</span><strong id="reportTest1"></strong></div>
+          <div><span>الاختبار 2</span><strong id="reportTest2"></strong></div>
+          <div><span>الاختبار 3</span><strong id="reportTest3"></strong></div>
+          <div><span>معدل الاختبارات الفترية</span><strong id="reportTestAverage"></strong></div>
+          <div><span>المجموع</span><strong id="reportTotal"></strong></div>
+        </div>
+        <div class="report-result">
+          <div><span>النسبة</span><strong id="reportPercentage"></strong></div>
+          <div><span>المستوى</span><strong id="reportLevel"></strong></div>
+        </div>
+        <label class="note-box"><span>ملاحظة المعلمة</span><textarea id="reportNote" rows="4" placeholder="اكتبي ملاحظة خاصة بالطالبة..."></textarea></label>
       </div>
-      <div id="modalBody"></div>
-    </div>
+      <div class="report-actions">
+        <button id="shareReport" class="primary" type="button">📤 مشاركة التقرير</button>
+        <button id="printReport" type="button">🖨️ طباعة / حفظ PDF</button>
+        <button id="closeReportBottom" class="secondary" type="button">إغلاق</button>
+      </div>
+    </section>
   </div>
 
-  <script src="app.js"></script>
+  <script src="script.js"></script>
+  <script src="participation4.js"></script>
 </body>
 </html>
