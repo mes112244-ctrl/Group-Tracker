@@ -5,17 +5,17 @@
   const originalOpenReport = openReport;
   const originalReportText = reportText;
   const originalPrintCurrentReport = printCurrentReport;
-  const labels = ['المشاركة والتفاعل','الواجبات والمشروع','المهام الأدائية','العملي'];
-  const fields = ['participation','homework','activity','practical'];
-  const caps = [10,10,10,5];
-  const testFields = ['test1','test2','test3','test4'];
+  const labels = ['المشاركة والتفاعل','المهام الأدائية','المشروع','الواجبات','النشاط'];
+  const fields = ['participation','performance','project','homework','activity'];
+  const caps = [10,10,5,5,5];
+  const testFields = ['test1','test2'];
   const round = n => Math.round(n*100)/100;
   const num = (v,max) => numberValue(v,max);
   const periodKeys = (p) => [...fields.map(f=>`p${p}_${f}`),...testFields.map(f=>`p${p}_${f}`)];
   function period(s,p){
     const scores=fields.map((f,i)=>num(s[`p${p}_${f}`],caps[i]));
     const tests=testFields.map(f=>num(s[`p${p}_${f}`],15));
-    const average=round(tests.reduce((a,b)=>a+b,0)/4);
+    const average=round(tests.reduce((a,b)=>a+b,0)/2);
     const total=round(scores.reduce((a,b)=>a+b,0)+average);
     return {scores,tests,average,total};
   }
@@ -34,8 +34,8 @@
     else if(percentage>=70){level='جيد';levelClass='level-good';icon='🔵';defaultNote='أداء جيد.';}
     else if(percentage>=60){level='مقبول';levelClass='level-acceptable';icon='🟠';defaultNote='المستوى مقبول ويحتاج إلى تحسين.';}
     return {p1,p2,total,percentage,level,levelClass,icon,defaultNote,
-      practical:p1.scores[3],homework:p1.scores[1],participation:p1.scores[0],activity:p1.scores[2],
-      test1:p1.tests[0],test2:p1.tests[1],test3:p1.tests[2],testAverage:p1.average};
+      practical:0,homework:p1.scores[3],participation:p1.scores[0],activity:p1.scores[4],
+      test1:p1.tests[0],test2:p1.tests[1],test3:0,testAverage:p1.average};
   };
   function periodHtml(s,index,p){
     const r=period(s,p);
@@ -80,18 +80,21 @@
     }).join('\n\n');
   }
   openReport=function(index){
-    originalOpenReport(index);
+    currentReportIndex=index;
     const s=students[index],r=studentResult(s);
-    // استبدال محتوى شبكة التقرير القديمة فقط، مع بقاء نافذة التقرير وأزرارها.
-    const grid=document.querySelector('#reportContent .report-grid');
-    grid.innerHTML=[1,2].map(p=>{
-      const x=r[`p${p}`];
-      return `<div class="report-period"><h3>الفترة ${p===1?'الأولى':'الثانية'} — ${x.total} / 50</h3><div class="period-report-grid">`+
-        fields.map((f,i)=>`<div><span>${labels[i]}</span><strong>${x.scores[i]} / ${caps[i]}</strong></div>`).join('')+
-        x.tests.map((v,i)=>`<div><span>الاختبار ${i+1}</span><strong>${v} / 15</strong></div>`).join('')+
-        `<div><span>معدل الاختبارات</span><strong>${x.average} / 15</strong></div></div></div>`;
-    }).join('')+`<div class="report-period"><strong>المجموع النهائي: ${r.total} / 100</strong></div>`;
-    document.getElementById('reportTotal').textContent=`${r.total} / 100`;
+    document.getElementById('reportMeta').textContent=[document.getElementById('school').value,document.getElementById('teacher').value,activeClass()?.name||'',document.getElementById('week').value].filter(Boolean).join(' • ');
+    document.getElementById('reportName').textContent=s.name||'غير مسجل';
+    document.getElementById('reportPercentage').textContent=r.percentage+'%';
+    document.getElementById('reportLevel').textContent=r.icon+' '+r.level;
+    reportNote.value=s.note||r.defaultNote;
+    document.querySelector('#reportContent .report-grid').innerHTML=[1,2].map(p=>{
+      const x=r['p'+p];
+      return '<div class="report-period"><h3>الفترة '+(p===1?'الأولى':'الثانية')+' — '+x.total+' / 50</h3><div class="period-report-grid">'+
+        fields.map((f,i)=>'<div><span>'+labels[i]+'</span><strong>'+x.scores[i]+' / '+caps[i]+'</strong></div>').join('')+
+        x.tests.map((v,i)=>'<div><span>الاختبار '+(i+1)+'</span><strong>'+v+' / 15</strong></div>').join('')+
+        '<div><span>معدل الاختبارين</span><strong>'+x.average+' / 15</strong></div></div></div>';
+    }).join('')+'<div class="report-period"><strong>المجموع النهائي: '+r.total+' / 100</strong></div>';
+    modal.classList.add('open');modal.setAttribute('aria-hidden','false');
   };
   reportText=function(){
     if(currentReportIndex===null)return '';
@@ -122,8 +125,8 @@
   blankCopy.addEventListener('click',()=>{
     const named=students.filter(s=>s.name.trim());if(!named.length){alert('أضيفي أسماء الطالبات أولًا.');return;}
     const w=window.open('','_blank');if(!w){alert('اسمحي بالنوافذ المنبثقة للطباعة.');return;}
-    const columns=['م','اسم الطالبة',...['الأولى','الثانية'].flatMap(p=>[`مشاركة ${p}`,`واجب ومشروع ${p}`,`مهام ${p}`,`عملي ${p}`,`اختبارات ${p}`,`مجموع ${p}`]),'النهائي'];
-    w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><style>@page{size:A3 landscape;margin:8mm}body{font:11px Tahoma,Arial}table{border-collapse:collapse;width:100%}th,td{border:1px solid #555;padding:8px;text-align:center}th{background:#eee}</style></head><body><h2>كشف متابعة — ${escapeHtml(activeClass()?.name||'')}</h2><table><thead><tr>${columns.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${named.map((s,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(s.name)}</td>${Array(13).fill('<td></td>').join('')}</tr>`).join('')}</tbody></table><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);w.document.close();
+    const columns=['م','اسم الطالبة',...['الأولى','الثانية'].flatMap(p=>[`مشاركة ${p}`,`مهام ${p}`,`مشروع ${p}`,`واجبات ${p}`,`نشاط ${p}`,`اختبارات ${p}`,`مجموع ${p}`]),'النهائي'];
+    w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><style>@page{size:A3 landscape;margin:8mm}body{font:11px Tahoma,Arial}table{border-collapse:collapse;width:100%}th,td{border:1px solid #555;padding:8px;text-align:center}th{background:#eee}</style></head><body><h2>كشف متابعة — ${escapeHtml(activeClass()?.name||'')}</h2><table><thead><tr>${columns.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${named.map((s,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(s.name)}</td>${Array(15).fill('<td></td>').join('')}</tr>`).join('')}</tbody></table><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);w.document.close();
   });
   const style=document.createElement('style');style.textContent=`
     .period-panel{min-width:320px;text-align:right;padding:6px}.period-panel>strong{display:block;margin-bottom:8px;color:#334155}
@@ -138,5 +141,24 @@
     .period-report-grid strong{font-size:13px}
     @media(max-width:700px){.period-panel{min-width:280px}.period-fields{grid-template-columns:repeat(2,1fr)}}`;
   document.head.appendChild(style);
+
+  const analysis=document.getElementById('analysisPanel');
+  const extra=document.createElement('section');
+  extra.className='chart-card';extra.id='periodComparison';
+  extra.innerHTML='<h3>مقارنة الفترتين ومتوسط الأقسام</h3><div id="periodBars"></div><h3>متوسط درجات الأقسام للفترتين</h3><div id="categoryBars"></div><p class="chart-note">المتوسطات محسوبة من درجات الطالبات المسجلة في الشعبة المختارة.</p>';
+  analysis.appendChild(extra);
+  const previousAnalysis=updateAnalysis;
+  updateAnalysis=function(){
+    previousAnalysis();
+    const list=students.filter(s=>s.name.trim());
+    const avg=(vals)=>list.length?round(vals.reduce((a,b)=>a+b,0)/list.length):0;
+    const periodBars=[1,2].map(p=>({name:'الفترة '+(p===1?'الأولى':'الثانية'),value:avg(list.map(s=>period(s,p).total)),max:50}));
+    const categoryBars=fields.map((f,i)=>({name:labels[i],value:avg(list.map(s=>period(s,1).scores[i]+period(s,2).scores[i])),max:caps[i]*2}));
+    categoryBars.push({name:'الاختبارات',value:avg(list.map(s=>period(s,1).average+period(s,2).average)),max:30});
+    function bars(items){return items.map(x=>'<div class="compare-row"><span>'+x.name+'</span><div class="compare-track"><div class="compare-fill" style="width:'+Math.min(100,x.value/x.max*100)+'%"></div></div><strong>'+x.value+' / '+x.max+'</strong></div>').join('');}
+    document.getElementById('periodBars').innerHTML=bars(periodBars);
+    document.getElementById('categoryBars').innerHTML=bars(categoryBars);
+  };
+  style.textContent+= '.compare-row{display:grid;grid-template-columns:150px 1fr 75px;align-items:center;gap:10px;margin:12px 0;font-size:13px}.compare-track{height:16px;border-radius:9px;background:#e2e8f0;overflow:hidden}.compare-fill{height:100%;background:#6366f1;border-radius:9px}.compare-row strong{white-space:nowrap}@media(max-width:600px){.compare-row{grid-template-columns:95px 1fr 65px;font-size:11px}}';
   render();
 })();
