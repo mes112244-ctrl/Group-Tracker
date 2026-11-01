@@ -6,7 +6,9 @@
   <meta name="theme-color" content="#ffffff">
   <title>دفتر متابعة الطالبات</title>
   <link rel="stylesheet" href="style.css">
-  <!-- GitHub edit permission verified for gradebook upgrade -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="دفتر المتابعة">
 </head>
 <body>
   <main class="container">
@@ -98,7 +100,7 @@
           <tr>
             <th>م</th>
             <th>اسم الطالبة</th>
-            <th>الفترة الأولى / 50</th><th>الفترة الثانية / 50</th><th>المجموع / 100</th><th>النسبة</th><th>إشعار المستوى</th><th>التقرير</th><th>حذف</th>
+            <th>المشاركة / 10</th><th>الواجبات / 10</th><th>المشاريع / 10</th><th>المهام الأدائية / 10</th><th>اختبار الفترة / 20</th><th>المجموع / 60</th><th>النسبة</th><th>إشعار المستوى</th><th>التقرير</th><th>حذف</th>
           </tr>
         </thead>
         <tbody id="studentTable"></tbody>
@@ -143,5 +145,6 @@
 
   <script src="script.js"></script>
   <script src="grade-periods.js"></script>
+  <script>if ("serviceWorker" in navigator && location.protocol !== "file:") { window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(console.warn)); }</script>
 </body>
 </html>
