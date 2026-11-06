@@ -75,6 +75,7 @@ function studentResult(student) {
 
 function newStudent(data = {}) {
   return {
+    ...data,
     name: data.name || "",
     practical: data.practical ?? data.attendance ?? "",
     homework: data.homework ?? "",
