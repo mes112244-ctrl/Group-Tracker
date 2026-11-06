@@ -1,4 +1,4 @@
-// مسودة آمنة: فترتان بنفس سلم أعمال السنة (60)، والمتوسط من 60، والنهائي من 40.
+// مسودة: فترتان بنفس سلم أعمال السنة (60 لكل فترة)، دون اختبار نهائي.
 // لا تُنشر على الفرع الرئيسي قبل اختبار الاستعادة والنسخ الاحتياطي.
 (() => {
   const originalNewStudent = newStudent;
@@ -18,26 +18,23 @@
     const p1=periodTotal(s,1),p2=periodTotal(s,2);
     const completed=[1,2].filter(p=>hasPeriod(s,p));
     const coursework=completed.length?Math.round(completed.reduce((sum,p)=>sum+periodTotal(s,p),0)/completed.length*100)/100:0;
-    const finalEntered=s.finalExam40!==''&&s.finalExam40!==undefined&&s.finalExam40!==null;
-    const finalExam=value(s,'finalExam40',40);
-    const total=coursework+(finalEntered?finalExam:0);
-    const percentage=finalEntered?Math.round(total):Math.round(coursework/60*100);
+    const total=coursework;
+    const percentage=Math.round(coursework/60*100);
     let level='تحتاج متابعة',levelClass='level-follow',icon='🔴';
     if(percentage>=90){level='ممتاز';levelClass='level-excellent';icon='🌟';}
     else if(percentage>=80){level='جيد جدًا';levelClass='level-verygood';icon='🟢';}
     else if(percentage>=70){level='جيد';levelClass='level-good';icon='🔵';}
     else if(percentage>=60){level='مقبول';levelClass='level-acceptable';icon='🟠';}
-    return {p1,p2,coursework,finalExam,finalEntered,total,percentage,level,levelClass,icon,defaultNote:'',practical:0,homework:0,participation:0,activity:0,test1:0,test2:0,test3:0,testAverage:0};
+    return {p1,p2,coursework,total,percentage,level,levelClass,icon,defaultNote:'',practical:0,homework:0,participation:0,activity:0,test1:0,test2:0,test3:0,testAverage:0};
   };
   newStudent=function(data={}){
     const s=originalNewStudent(data);
     for(const [key] of parts){s[key]=data[key]??'';s['p2_'+key]=data['p2_'+key]??'';}
-    s.finalExam40=data.finalExam40??'';
     return s;
   };
   studentResult=calc;
   const scoreInput=(s,i,p,key,label,max)=>`<label class="score-field"><span>${label} / ${max}</span><input class="grade-input" type="number" min="0" max="${max}" step="0.5" inputmode="decimal" value="${escapeHtml(s[pkey(p,key)]??'')}" data-index="${i}" data-field="${pkey(p,key)}" aria-label="${label} - الفترة ${p}"></label>`;
-  const resultCell=(r)=>`<td data-result="total">${r.finalEntered?r.total+' / 100':r.coursework+' / 60 (مؤقت)'}</td><td data-result="percentage">${r.percentage}%</td><td data-result="level"><span class="level-badge ${r.levelClass}">${r.icon} ${r.level}</span></td>`;
+  const resultCell=(r)=>`<td data-result="total">${r.coursework+' / 60'}</td><td data-result="percentage">${r.percentage}%</td><td data-result="level"><span class="level-badge ${r.levelClass}">${r.icon} ${r.level}</span></td>`;
   render=function(){
     originalRender();
     table.innerHTML='';
@@ -49,7 +46,6 @@
       ${parts.map(([key,label,max])=>`<td class="periods-cell">${scoreInput(s,i,1,key,label,max)}${scoreInput(s,i,2,key,label,max)}</td>`).join('')}
       <td class="periods-cell"><strong>${r.p1} / 60</strong><strong>${r.p2} / 60</strong></td>
       <td data-result="coursework">${r.coursework} / 60</td>
-      <td><input class="grade-input" type="number" min="0" max="40" step="0.5" value="${escapeHtml(s.finalExam40??'')}" data-index="${i}" data-field="finalExam40" aria-label="الاختبار النهائي من 40"></td>
       ${resultCell(r)}<td><button class="report-button" type="button" data-report="${i}">📄 تقرير</button></td><td><button class="delete-button" type="button" data-delete="${i}">حذف</button></td>`;
       table.appendChild(row);
     });
@@ -62,13 +58,13 @@
     const totals=row.querySelectorAll('.periods-cell strong');
     if(totals.length===2){totals[0].textContent=r.p1+' / 60';totals[1].textContent=r.p2+' / 60';}
     row.querySelector('[data-result="coursework"]').textContent=r.coursework+' / 60';
-    row.querySelector('[data-result="total"]').textContent=r.finalEntered?r.total+' / 100':r.coursework+' / 60 (مؤقت)';
+    row.querySelector('[data-result="total"]').textContent=r.coursework+' / 60';
     row.querySelector('[data-result="percentage"]').textContent=r.percentage+'%';
     row.querySelector('[data-result="level"]').innerHTML=`<span class="level-badge ${r.levelClass}">${r.icon} ${r.level}</span>`;
   };
   const report=(s)=>{
     const r=calc(s);
-    return [`الفترة الأولى: ${r.p1} / 60`,`الفترة الثانية: ${r.p2} / 60`,`متوسط أعمال السنة: ${r.coursework} / 60`,`الاختبار النهائي: ${r.finalEntered?r.finalExam+' / 40':'لم يُرصد'}`,`المجموع: ${r.finalEntered?r.total+' / 100':'مؤقت حتى رصد النهائي'}`,`المستوى: ${r.level}`].join('\n');
+    return [`الفترة الأولى: ${r.p1} / 60`,`الفترة الثانية: ${r.p2} / 60`,`متوسط أعمال السنة: ${r.coursework} / 60`,`المجموع: ${r.coursework+' / 60'}`,`المستوى: ${r.level}`].join('\n');
   };
   openReport=function(i){
     currentReportIndex=i;
@@ -78,7 +74,7 @@
     document.getElementById('reportPercentage').textContent=r.percentage+'%';
     document.getElementById('reportLevel').textContent=r.icon+' '+r.level;
     reportNote.value=s.note||'';
-    document.querySelector('#reportContent .report-grid').innerHTML=[['الفترة الأولى',r.p1+' / 60'],['الفترة الثانية',r.p2+' / 60'],['متوسط أعمال السنة',r.coursework+' / 60'],['النهائي',r.finalEntered?r.finalExam+' / 40':'لم يُرصد'],['المجموع',r.finalEntered?r.total+' / 100':'مؤقت']].map(([k,v])=>`<div><span>${k}</span><strong>${v}</strong></div>`).join('');
+    document.querySelector('#reportContent .report-grid').innerHTML=[['الفترة الأولى',r.p1+' / 60'],['الفترة الثانية',r.p2+' / 60'],['متوسط أعمال السنة',r.coursework+' / 60'],['المجموع',r.coursework+' / 60']].map(([k,v])=>`<div><span>${k}</span><strong>${v}</strong></div>`).join('');
     modal.classList.add('open');modal.setAttribute('aria-hidden','false');
   };
   reportText=function(){
@@ -100,7 +96,7 @@
       if(id==='printReport')return printCurrentReport();
       const list=students.filter(s=>s.name.trim());
       const w=window.open('','_blank');if(!w)return alert('اسمحي بالنوافذ المنبثقة');
-      const cols=['م','اسم الطالبة','الفترة',...parts.map(f=>f[1]),'مجموع الفترة / 60','النهائي / 40'];
+      const cols=['م','اسم الطالبة','الفترة',...parts.map(f=>f[1]),'مجموع الفترة / 60','متوسط الفترتين / 60'];
       w.document.write(`<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><style>@page{size:A4 landscape}body{font:12px Tahoma,Arial}table{border-collapse:collapse;width:100%}th,td{border:1px solid #555;padding:7px}th{background:#eee}</style><h2>كشف متابعة — ${escapeHtml(activeClass()?.name||'')}</h2><table><tr>${cols.map(c=>'<th>'+c+'</th>').join('')}</tr>${list.map((s,i)=>[1,2].map(p=>`<tr><td>${i+1}</td><td>${escapeHtml(s.name)}</td><td>الفترة ${p}</td>${parts.map(()=>'<td></td>').join('')}<td></td><td></td></tr>`).join('')).join('')}</table><script>onload=()=>print()<\/script>`);
       w.document.close();
     });
